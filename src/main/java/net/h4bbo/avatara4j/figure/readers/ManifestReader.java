@@ -1,5 +1,6 @@
 package net.h4bbo.avatara4j.figure.readers;
 
+import net.h4bbo.avatara4j.figure.util.FileUtil;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -19,13 +20,13 @@ public class ManifestReader {
     public void load() {
         parts = new HashMap<String, String>();
 
-        File xmlDir = new File("figuredata/xml");
-        File convDir = new File("figuredata/converter");
-        File imgDir = new File("figuredata/images");
+        //File xmlDir = new File("figuredata/xml");
+        // File convDir = new File("figuredata/converter");
+        // File imgDir = new File("figuredata/images");
 
-        if (!xmlDir.exists()) xmlDir.mkdirs();
-        if (!convDir.exists()) convDir.mkdirs();
-        if (!imgDir.exists()) imgDir.mkdirs();
+        //if (!xmlDir.exists()) xmlDir.mkdirs();
+        // if (!convDir.exists()) convDir.mkdirs();
+        // if (!imgDir.exists()) imgDir.mkdirs();
 
         /*
         File oldData = new File("figuredata/converter/oldfiguredata.json");
@@ -38,20 +39,31 @@ public class ManifestReader {
         }*/
 
         // Parse all XML manifests
-        File[] xmlFiles = xmlDir.listFiles();
+        //File[] xmlFiles = xmlDir.listFiles();
+        //if (xmlFiles != null) {
+        //    for (File manifest : xmlFiles) {
+        //        try {
+        //            parseXML(manifest.getAbsolutePath());
+        //        } catch (Exception e) {
+        //           e.printStackTrace();
+        //           return;
+        //        }
+        //    }
+        //}
+
+        List<InputStream> xmlFiles = FileUtil.getInstance().getFigureXmlFiles();
         if (xmlFiles != null) {
-            for (File manifest : xmlFiles) {
+            for (InputStream manifest : xmlFiles) {
                 try {
-                    parseXML(manifest.getAbsolutePath());
+                    parseXML(manifest);
                 } catch (Exception e) {
-                   e.printStackTrace();
-                   return;
+                    throw new RuntimeException(e);
                 }
             }
         }
     }
 
-    private void parseXML(String fileName) throws Exception {
+    private void parseXML(InputStream fileName) throws Exception {
         Document xmlFile = readXmlFile(fileName);
         NodeList list = xmlFile.getElementsByTagName("asset");
 
@@ -80,26 +92,16 @@ public class ManifestReader {
                 }
             }
 
-
-            String key;
-            if (fileName.startsWith("hh_ ")) {
-                key = nameParts[2];
-            } else {
-                key = nameParts[2];
-            }
-
-
-
             if (name != null && offsets != null && !parts.containsKey(name)) {
                 parts.put(name, offsets);
             }
         }
     }
 
-    private Document readXmlFile(String fileName) throws Exception {
+    private Document readXmlFile(InputStream fileName) throws Exception {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        return dBuilder.parse(new File(fileName));
+        return dBuilder.parse(fileName);
     }
 
     public Map<String, String> getParts() {

@@ -5,157 +5,298 @@ import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
-/**
- * Utility class for common file operations, particularly for XML file handling.
- */
 public class FileUtil {
+    private static final FileUtil INSTANCE = new FileUtil(FileSource.CLASSPATH);
 
-    /**
-     * Finds and parses the first XML file in the output directory
-     * whose name (without extension) contains the directory name.
-     *
-     * @param outputDirectory The directory to search for files.
-     * @return The parsed XML Document, or null if not found or error occurs.
-     */
-    public static Document solveXmlFile(String outputDirectory) {
-        return solveXmlFile(outputDirectory, null);
+    public enum FileSource { FILESYSTEM, CLASSPATH }
+
+    private final FileSource fileSource;
+    private final ClassLoader classLoader;
+
+    public FileUtil(FileSource fileSource) {
+        this.fileSource = fileSource;
+        this.classLoader = Thread.currentThread().getContextClassLoader();
     }
 
-    /**
-     * Finds and parses the first XML file in the output directory
-     * whose name (without extension) contains the given substring.
-     * If fileNameContains is null, the directory name is used as the pattern.
-     *
-     * @param outputDirectory  The directory to search for files.
-     * @param fileNameContains Substring to search for in file names.
-     * @return The parsed XML Document, or null if not found or error occurs.
-     */
-    public static Document solveXmlFile(String outputDirectory, String fileNameContains) {
-        if (fileNameContains == null) {
-            fileNameContains = outputDirectory;
-        }
+    // ----- PUBLIC API -----
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(outputDirectory))) {
-            for (Path entry : stream) {
-                String fileName = getFileNameWithoutExtension(entry.getFileName().toString());
-                if (fileName.contains(fileNameContains)) {
-                    return readXmlFile(entry.toAbsolutePath().toString());
-                }
-            }
-        } catch (IOException e) {
-            // Handle exception as needed
-        }
-        return null;
+    public Document solveXmlFile(String directory, String fileNameContains) {
+        if (fileNameContains == null) fileNameContains = directory;
+        // String filePath = solveFile(directory, fileNameContains);
+        List<InputStream> fileStream = solveFile(directory, fileNameContains);
+        //return filePath == null ? null : readXmlFile(filePath);
+        return fileStream.isEmpty() ? null : readXmlFile(fileStream.stream().findFirst().get());
     }
 
-    /**
-     * Reads and parses an XML file, correcting known issues:
-     * 1. Removes a newline before XML declaration.
-     * 2. Removes <graphics> tags.
-     *
-     * @param file The path to the XML file.
-     * @return The parsed XML Document, or null if an error occurs.
-     */
-    public static Document readXmlFile(String file) {
+    public Document solveXmlFile(String directory) {
+        return solveXmlFile(directory, null);
+    }
+
+    public Document readXmlFile(InputStream path) {
+        InputStream in = null;
         try {
-            String text = new String(Files.readAllBytes(Paths.get(file)), StandardCharsets.UTF_8);
+            in = path;
+            if (in == null) return null;
 
-            // Remove newline before XML declaration if present
-            if (text.contains("\n<?xml")) {
-                text = text.replace("\n<?xml", "<?xml");
-                Files.write(Paths.get(file), text.getBytes(StandardCharsets.UTF_8));
-            }
+            String text = readAllText(in);
 
-            // Remove <graphics> tags if present
-            if (text.contains("<graphics>")) {
-                text = text.replace("<graphics>", "");
-                text = text.replace("</graphics>", "            ");
-                Files.write(Paths.get(file), text.getBytes(StandardCharsets.UTF_8));
-            }
+            // Remove newline before XML declaration
+            text = text.replace("\n<?xml", "<?xml");
+            // Remove <graphics> tags
+            text = text.replace("<graphics>", "");
+            text = text.replace("</graphics>", "            ");
 
-            // Parse XML
+            // Parse the cleaned XML text
+            InputStream cleanIn = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(new File(file));
+            Document doc = dBuilder.parse(cleanIn);
+            cleanIn.close();
             return doc;
 
-        } catch (Exception e) {
-            // Handle exception as needed
-            return null;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (in != null) try { in.close(); } catch (IOException ignored) {}
         }
     }
 
-    /**
-     * Finds the first file in the directory whose name matches the given pattern.
-     * Uses endsWith by default.
-     *
-     * @param outputDirectory  The directory to search for files.
-     * @param fileNameContains The string to match in file names.
-     * @return The full path of the found file, or null if not found.
-     */
-    public static String solveFile(String outputDirectory, String fileNameContains) {
-        return solveFile(outputDirectory, fileNameContains, true, false);
-    }
+    public InputStream getFile(String directory, String file) {
+        List<InputStream> result = new ArrayList<>();
 
-    /**
-     * Finds the first file in the directory whose name matches the pattern according to the given flags.
-     *
-     * @param outputDirectory  The directory to search for files.
-     * @param fileNameContains The string to match in file names.
-     * @param endsWith         If true, matches files ending with fileNameContains.
-     * @param equals           If true, matches files exactly equal to fileNameContains.
-     * @return The full path of the found file, or null if not found.
-     */
-    public static String solveFile(String outputDirectory, String fileNameContains, boolean endsWith, boolean equals) {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(outputDirectory))) {
-            for (Path entry : stream) {
-                String fileName = getFileNameWithoutExtension(entry.getFileName().toString());
-                if (equals) {
-                    if (fileName.equals(fileNameContains)) {
-                        return entry.toAbsolutePath().toString();
-                    }
-                } else if (endsWith) {
-                    if (fileName.endsWith(fileNameContains)) {
-                        return entry.toAbsolutePath().toString();
-                    }
-                } else {
-                    if (fileName.contains(fileNameContains)) {
-                        return entry.toAbsolutePath().toString();
+        if (fileSource == FileSource.FILESYSTEM) {
+            Path dirPath = Paths.get(directory);
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath)) {
+                for (Path entry : stream) {
+                    String fileName = getFileNameWithoutExtension(entry.getFileName().toString());
+                    if (fileName.equals(file)) {
+                        result.add(Files.newInputStream(entry));
                     }
                 }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
             }
-        } catch (IOException e) {
-            // Handle exception as needed
+        } else {
+            // CLASSPATH (inside jar or classpath dir)
+            String dir = directory.endsWith("/") ? directory : directory + "/";
+            try {
+                Enumeration<URL> resources = classLoader.getResources(dir);
+                while (resources.hasMoreElements()) {
+                    URL url = resources.nextElement();
+                    if ("jar".equals(url.getProtocol())) {
+                        String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
+                        try (JarFile jar = new JarFile(jarPath)) {
+                            Enumeration<JarEntry> entries = jar.entries();
+                            while (entries.hasMoreElements()) {
+                                JarEntry entry = entries.nextElement();
+                                if (entry.getName().startsWith(dir) && !entry.isDirectory()) {
+                                    String entryName = new File(entry.getName()).getName();
+                                    String fileName = getFileNameWithoutExtension(entryName);
+                                    if (fileName.equals(file)) {
+                                        InputStream is = classLoader.getResourceAsStream(entry.getName());
+                                        if (is != null) {
+                                            result.add(is);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if ("file".equals(url.getProtocol())) {
+                        File f = new File(url.toURI());
+                        File[] files = f.listFiles();
+                        if (files != null) {
+                            for (File child : files) {
+                                String fileName = getFileNameWithoutExtension(child.getName());
+                                if (fileName.equals(file)) {
+                                    result.add(Files.newInputStream(child.toPath()));
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
         }
-        return null;
+
+        return result.stream().findFirst().get();
     }
 
-    /**
-     * Returns the lowercase alphabet letter at the specified index (0 = 'a', 1 = 'b', ...).
-     * If the index is out of range, returns an empty string.
-     *
-     * @param animationLayer The index of the letter.
-     * @return The corresponding letter as a string, or empty string if out of bounds.
-     */
-    public static String numericLetter(int animationLayer) {
-        char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
-        if (animationLayer >= 0 && animationLayer < alphabet.length) {
-            return String.valueOf(alphabet[animationLayer]);
+    public List<InputStream> solveFile(String directory, String fileNameContains) {
+        List<InputStream> result = new ArrayList<>();
+
+        if (fileSource == FileSource.FILESYSTEM) {
+            Path dirPath = Paths.get(directory);
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath)) {
+                for (Path entry : stream) {
+                    String fileName = getFileNameWithoutExtension(entry.getFileName().toString());
+                    if (fileName.contains(fileNameContains)) {
+                        result.add(Files.newInputStream(entry));
+                    }
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        } else {
+            // CLASSPATH (inside jar or classpath dir)
+            String dir = directory.endsWith("/") ? directory : directory + "/";
+            try {
+                Enumeration<URL> resources = classLoader.getResources(dir);
+                while (resources.hasMoreElements()) {
+                    URL url = resources.nextElement();
+                    if ("jar".equals(url.getProtocol())) {
+                        String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
+                        try (JarFile jar = new JarFile(jarPath)) {
+                            Enumeration<JarEntry> entries = jar.entries();
+                            while (entries.hasMoreElements()) {
+                                JarEntry entry = entries.nextElement();
+                                if (entry.getName().startsWith(dir) && !entry.isDirectory()) {
+                                    String entryName = new File(entry.getName()).getName();
+                                    String fileName = getFileNameWithoutExtension(entryName);
+                                    if (fileName.contains(fileNameContains)) {
+                                        InputStream is = classLoader.getResourceAsStream(entry.getName());
+                                        if (is != null) {
+                                            result.add(is);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if ("file".equals(url.getProtocol())) {
+                        File file = new File(url.toURI());
+                        File[] files = file.listFiles();
+                        if (files != null) {
+                            for (File child : files) {
+                                String fileName = getFileNameWithoutExtension(child.getName());
+                                if (fileName.contains(fileNameContains)) {
+                                    result.add(Files.newInputStream(child.toPath()));
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
         }
-        return "";
+
+        return Collections.unmodifiableList(result);
     }
 
-    /**
-     * Returns the file name without its extension.
-     *
-     * @param filename The file name with extension.
-     * @return The file name without extension.
+    public List<InputStream> getFigureXmlFiles() {
+        return solveFile("figuredata/xml", "");
+    }
+
+
+    /*
+    public List<File> getFigureXmlFiles() {
+        List<File> result = new ArrayList<File>();
+        String xmlDir = "figuredata/xml";
+        if (fileSource == FileSource.FILESYSTEM) {
+            File dir = new File(xmlDir);
+            if (!dir.exists()) dir.mkdirs();
+            File[] files = dir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".xml");
+                }
+            });
+            if (files != null) {
+                for (File f : files) {
+                    result.add(f);
+                }
+            }
+        } else {
+            // CLASSPATH mode: find resources inside jar/classpath
+            try {
+                String xmlDirWithSlash = xmlDir.endsWith("/") ? xmlDir : xmlDir + "/";
+                Enumeration<URL> resources = classLoader.getResources(xmlDirWithSlash);
+                while (resources.hasMoreElements()) {
+                    URL url = resources.nextElement();
+                    if ("jar".equals(url.getProtocol())) {
+                        String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
+                        try (JarFile jar = new JarFile(jarPath)) {
+                            Enumeration<JarEntry> entries = jar.entries();
+                            while (entries.hasMoreElements()) {
+                                JarEntry entry = entries.nextElement();
+                                if (entry.getName().startsWith(xmlDirWithSlash)
+                                        && entry.getName().endsWith(".xml")
+                                        && !entry.isDirectory()) {
+                                    // Not a real File, but lets you get path
+                                    result.add(new File(entry.getName()));
+                                }
+                            }
+                        }
+                    } else if ("file".equals(url.getProtocol())) {
+                        // For running from IDE/project dir
+                        File folder = new File(url.toURI());
+                        File[] files = folder.listFiles(new FilenameFilter() {
+                            public boolean accept(File dir, String name) {
+                                return name.endsWith(".xml");
+                            }
+                        });
+                        if (files != null) {
+                            for (File f : files) {
+                                result.add(f);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
+    }
+
      */
-    private static String getFileNameWithoutExtension(String filename) {
+
+    /*
+    private InputStream openInputStream(String path) throws IOException {
+        if (fileSource == FileSource.FILESYSTEM) {
+            return Files.newInputStream(Paths.get(path));
+        } else {
+            // For CLASSPATH: resource path must use '/' and be relative
+            String resourcePath = path.startsWith("/") ? path.substring(1) : path;
+            InputStream in = classLoader.getResourceAsStream(resourcePath);
+            if (in == null) {
+                // Try again in case file name is not prefixed with directory (rare case)
+                int lastSlash = resourcePath.lastIndexOf('/');
+                if (lastSlash >= 0) {
+                    in = classLoader.getResourceAsStream(resourcePath.substring(lastSlash + 1));
+                }
+            }
+            return in;
+        }
+    }*/
+
+    private String getFileNameWithoutExtension(String filename) {
         int dotIndex = filename.lastIndexOf('.');
         return (dotIndex == -1) ? filename : filename.substring(0, dotIndex);
+    }
+
+    private String readAllText(InputStream in) throws IOException {
+        // Java 8 compatible way to read all text from InputStream
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ( (line = reader.readLine()) != null ) {
+            sb.append(line).append("\n");
+        }
+        reader.close();
+        return sb.toString();
+    }
+
+    public static FileUtil getInstance() {
+        return INSTANCE;
     }
 }

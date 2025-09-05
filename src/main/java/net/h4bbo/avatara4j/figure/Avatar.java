@@ -166,8 +166,7 @@ public class Avatar {
         }
 
         // Convert to bytes (PNG)
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()){
             ImageIO.write(resized, "png", baos);
             return baos.toByteArray();
         } catch (IOException e) {
@@ -204,8 +203,8 @@ public class Avatar {
             BufferedImage faceCanvas,
             BufferedImage drinkCanvas,
             AvatarAsset asset
-    ) {try {
-        final BufferedImage image = ImageIO.read(new File(asset.getFileName()));
+    ) {try (InputStream stream = asset.getFileName()) {
+        final BufferedImage image = ImageIO.read(stream);
 
             // Skip if the asset's type is hidden by any buildQueue item
             boolean isHidden = buildQueue.stream().anyMatch(
@@ -468,15 +467,20 @@ public class Avatar {
         String offsets = ManifestReader.getInstance().getParts().get(assetName);
         if (offsets == null) return null;
 
-        String file = FileUtil.solveFile("figuredata/images/", assetName, false, true);
-        if (file == null) return null;
+        List<InputStream> streams = FileUtil.getInstance().solveFile("figuredata/images/", assetName);
+        Optional<InputStream> file = streams.stream().findFirst();
+
+        if (!file.isPresent())
+            return null;
+
+        // if (file.get().isEmpty()) return null;
 
         String[] offsetParts = offsets.split(",");
         int offsetX = Integer.parseInt(offsetParts[0]);
         int offsetY = Integer.parseInt(offsetParts[1]);
 
         return new AvatarAsset(
-                this.isSmall, this.action, assetName, file,
+                this.isSmall, this.action, assetName, file.orElse(null),
                 offsetX, offsetY, part, set, CANVAS_HEIGHT, CANVAS_WIDTH, parts
         );
     }

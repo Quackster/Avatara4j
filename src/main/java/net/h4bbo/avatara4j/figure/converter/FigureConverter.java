@@ -1,10 +1,13 @@
 package net.h4bbo.avatara4j.figure.converter;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import net.h4bbo.avatara4j.figure.readers.FiguredataReader;
+import net.h4bbo.avatara4j.figure.readers.LegacyFiguredataReader;
+import net.h4bbo.avatara4j.figure.types.FigureColor;
+import net.h4bbo.avatara4j.figure.types.legacy.LegacyFigure;
+import net.h4bbo.avatara4j.figure.util.FileUtil;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.*;
 
 /**
  * Figuredata converter originally written by Alcosmos.
@@ -24,17 +27,10 @@ public class FigureConverter {
         return instance;
     }
 
-    private final String oldFigureDataPath = "figuredata/converter/oldfiguredata.json";
-    private final String newFigureDataPath = "figuredata/converter/newfiguredata.json";
-
-    private volatile JsonNode oldFigureData;
-    private volatile JsonNode newFigureData;
-    private final Object oldLock = new Object();
-    private final Object newLock = new Object();
-    private final ObjectMapper mapper = new ObjectMapper();
-
     // Private constructor for singleton
-    private FigureConverter() {}
+    private FigureConverter() {
+
+    }
 
     /**
      * Converts an old figure format string to the new avatarimage format.
@@ -70,12 +66,21 @@ public class FigureConverter {
         return result.toString();
     }
 
+    /*
     private JsonNode getOldFigureData() {
         if (oldFigureData == null) {
             synchronized (oldLock) {
                 if (oldFigureData == null) {
                     try {
-                        oldFigureData = mapper.readTree(new File(oldFigureDataPath));
+                        List<InputStream> streams = FileUtil.getInstance().solveFile("figuredata/converter/", "oldfiguredata");
+                        Optional<InputStream> stream = streams.stream().findFirst();
+
+                        if (stream.isPresent()) {
+                            oldFigureData = mapper.readTree(stream.get());
+                        } else {
+                            throw new FileNotFoundException("Could not find figuredata/converter/oldfiguredata.json");
+                        }
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -83,24 +88,20 @@ public class FigureConverter {
             }
         }
         return oldFigureData;
-    }
-
-    private JsonNode getNewFigureData() {
-        if (newFigureData == null) {
-            synchronized (newLock) {
-                if (newFigureData == null) {
-                    try {
-                        newFigureData = mapper.readTree(new File(newFigureDataPath));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        return newFigureData;
-    }
+    }*/
 
     private String getOldColorFromFigureList(String part, int sprite, int colorIndex) {
+        Optional<LegacyFigure> oldColor = LegacyFiguredataReader.getInstance().getLegacyFiguredata()
+                .stream().filter(x ->
+                        x.getSprite() == sprite &&
+                        x.getParts().stream().anyMatch(partType -> partType.getType().equals(part) &&
+                        x.getColours().size() >= colorIndex)
+                )
+                .findFirst();
+
+        return oldColor.map(legacyFigure -> legacyFigure.getColours().get(colorIndex - 1)).orElse(null);
+
+        /*
         JsonNode colorsJson = getOldFigureData();
         JsonNode genders = colorsJson.get("genders");
         if (genders == null) return null;
@@ -128,14 +129,26 @@ public class FigureConverter {
                     }
                 }
             }
-        }
-        return null;
+        }*/
+
+
     }
 
     private String convertOldColorToNew(String part, int sprite, int colorIndex) {
         String oldColor = getOldColorFromFigureList(part, sprite, colorIndex);
         if (oldColor == null) return null;
 
+       for (List<FigureColor> colourPalettes : FiguredataReader.getInstance().getFigurePalettes().values()) {
+            Optional<FigureColor> colour = colourPalettes.stream()
+                    .filter(x -> x.getHexColor().equalsIgnoreCase(oldColor))
+                    .findFirst();
+
+            if (colour.isPresent()) {
+                return colour.get().getColourId();
+            }
+        }
+
+       /*
         JsonNode paletteJson = getNewFigureData();
         JsonNode palette = paletteJson.get("palette");
         if (palette == null) return null;
@@ -152,7 +165,8 @@ public class FigureConverter {
                     }
                 }
             }
-        }
+        }*/
+
         return null;
     }
 
@@ -180,7 +194,8 @@ public class FigureConverter {
             case 810: return ".ha-1012-" + colorId;
             case 802:
             case 811: return ".ha-1013-" + colorId;
-            default: return ".ha-0-" + colorId;
+            default: return ""; // this is the same as below but takes up less memory and is official Habbo behaviour :^) - Quackster
+            // default: return ".ha-0-" + colorId;
         }
     }
 }

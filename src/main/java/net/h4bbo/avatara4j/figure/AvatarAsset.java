@@ -3,13 +3,15 @@ package net.h4bbo.avatara4j.figure;
 import net.h4bbo.avatara4j.figure.types.FigurePart;
 import net.h4bbo.avatara4j.figure.types.FigureSet;
 
+import java.io.InputStream;
+
 public class AvatarAsset {
     public String name;
     public int x;
     public int y;
     public int imageX;
     public int imageY;
-    public String fileName;
+    public InputStream fileName;
     public FigurePart part;
     public FigureSet set;
     public String[] parts;
@@ -20,7 +22,7 @@ public class AvatarAsset {
             boolean isSmall,
             String action,
             String name,
-            String fileName,
+            InputStream fileName,
             int x,
             int y,
             FigurePart part,
@@ -68,7 +70,7 @@ public class AvatarAsset {
         return imageY;
     }
 
-    public String getFileName() {
+    public InputStream getFileName() {
         return fileName;
     }
 

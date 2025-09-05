@@ -9,6 +9,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.InputStream;
 import java.util.*;
 
 public class FiguredataReader {
@@ -27,14 +31,22 @@ public class FiguredataReader {
     }
 
     public void load() {
-        loadFigureSets();
-        loadFigureSetTypes();
-        loadFigurePalettes();
+        try {
+            loadFigureSets();
+            loadFigureSetTypes();
+            loadFigurePalettes();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
-    public void loadFigureSets() {
-        Document xmlFile = Objects.requireNonNull(FileUtil.solveXmlFile("figuredata"), "figuredata/figuredata.xml file was not found");
-        NodeList list = xmlFile.getElementsByTagName("set");
+    public void loadFigureSets() throws Exception {
+        InputStream xmlFile = Objects.requireNonNull( FileUtil.getInstance().getFile("figuredata", "figuredata"), "figuredata/figuredata.xml file was not found");
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.parse(xmlFile);
+        NodeList list = document.getElementsByTagName("set");
 
         for (int i = 0; i < list.getLength(); i++) {
             Node set = list.item(i);
@@ -93,7 +105,7 @@ public class FiguredataReader {
     }
 
     public void loadFigurePalettes() {
-        Document xmlFile = FileUtil.solveXmlFile("figuredata");
+        Document xmlFile =  FileUtil.getInstance().solveXmlFile("figuredata");
         NodeList list = xmlFile.getElementsByTagName("palette");
 
         for (int i = 0; i < list.getLength(); i++) {
@@ -125,7 +137,7 @@ public class FiguredataReader {
     }
 
     public void loadFigureSetTypes() {
-        Document xmlFile = FileUtil.solveXmlFile("figuredata");
+        Document xmlFile =  FileUtil.getInstance().solveXmlFile("figuredata");
         NodeList list = xmlFile.getElementsByTagName("settype");
 
         for (int i = 0; i < list.getLength(); i++) {

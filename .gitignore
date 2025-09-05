@@ -41,3 +41,5 @@ bin/
 ### Mac OS ###
 .DS_Store
 /.idea
+formatted_figuredata.json
+formatted_figuredata.xml
