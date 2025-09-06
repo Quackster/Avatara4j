@@ -1,12 +1,34 @@
 package net.h4bbo.avatara4j.badges;
 
+import net.h4bbo.avatara4j.badges.Extensions.RenderType;
+
 import java.security.*;
+import java.util.Objects;
 import java.util.regex.*;
 import javax.xml.*;
 
 public class BadgeSettings {
     private String basePath;
     private boolean isShockwaveBadge;
+    private boolean forceWhiteBackground;
+    private RenderType renderType = RenderType.GIF;
+
+    public RenderType getRenderType() {
+        return renderType;
+    }
+
+    public void setRenderType(RenderType renderType) {
+        Objects.requireNonNull(renderType);
+        this.renderType = renderType;
+    }
+
+    public boolean isForceWhiteBackground() {
+        return forceWhiteBackground;
+    }
+
+    public void setForceWhiteBackground(boolean forceWhiteBackground) {
+        this.forceWhiteBackground = forceWhiteBackground;
+    }
 
     public String getBasePath() {
         return basePath;

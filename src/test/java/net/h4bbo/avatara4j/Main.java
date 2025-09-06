@@ -2,6 +2,7 @@ package net.h4bbo.avatara4j;
 
 import net.h4bbo.avatara4j.badges.Badge;
 import net.h4bbo.avatara4j.badges.BadgeSettings;
+import net.h4bbo.avatara4j.badges.Extensions.RenderType;
 import net.h4bbo.avatara4j.figure.Avatar;
 import net.h4bbo.avatara4j.figure.readers.FiguredataReader;
 import net.h4bbo.avatara4j.figure.readers.LegacyFiguredataReader;
@@ -31,13 +32,15 @@ public class Main {
     private static void writeBadge() {
         BadgeSettings settings = new BadgeSettings();
         settings.setShockwaveBadge(true);
+        settings.setRenderType(RenderType.PNG);
+        settings.setForceWhiteBackground(false);
 
         // Get the badge from the server
         Badge badge = Badge.parseBadgeData(settings, "b1605Xs44024s17171");
 
-        // Render the badge and write it to a file
         try {
-            Files.write(Paths.get("badge_shockwave.gif"), badge.render(true, false));
+            // Render the badge and write it to a file
+            Files.write(Paths.get("badge_shockwave.png"), badge.render());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

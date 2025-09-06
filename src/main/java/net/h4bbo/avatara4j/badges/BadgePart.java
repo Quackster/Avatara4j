@@ -1,5 +1,6 @@
 package net.h4bbo.avatara4j.badges;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Optional;
@@ -83,7 +84,7 @@ public class BadgePart {
      * @param template the template image
      * @return the top‑left point where the part should be drawn
      */
-    public Badge.Point getPosition(BufferedImage canvas, BufferedImage template) {
+    public Point getPosition(BufferedImage canvas, BufferedImage template) {
         int x = 0;
         int y = 0;
 
@@ -124,7 +125,7 @@ public class BadgePart {
                 break;
         }
 
-        return new Badge.Point(x, y);
+        return new Point(x, y);
     }
 
     // --------------------------------------------------------------------

@@ -1,11 +1,10 @@
 package net.h4bbo.avatara4j.badges;
 
 import net.h4bbo.avatara4j.badges.Extensions.ColorExtensions;
+import net.h4bbo.avatara4j.badges.Extensions.RenderType;
 import net.h4bbo.avatara4j.badges.Extensions.StringExtensions;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Transparency;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -73,7 +72,6 @@ public class Badge {
     };
 
     private List<BadgePart> badgeParts;
-    private boolean forceWhiteBackground;
     private BadgeSettings badgeSettings;
 
     public List<BadgePart> getParts() {
@@ -143,16 +141,13 @@ public class Badge {
         return badge;
     }
 
+
     /**
      * Render the badge to a byte array.
      *
-     * @param gifEncoder          if true, render as GIF; otherwise PNG
-     * @param forceWhiteBackground if true, replace transparent areas with white
      * @return the image bytes, or null if rendering failed
      */
-    public byte[] render(boolean gifEncoder, boolean forceWhiteBackground) {
-        this.forceWhiteBackground = forceWhiteBackground;
-
+    public byte[] render() {
         BufferedImage canvas = ColorExtensions.createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
         Graphics2D gCanvas = canvas.createGraphics();
 
@@ -201,12 +196,12 @@ public class Badge {
 
         gCanvas.dispose();
 
-        if (forceWhiteBackground) {
+        if (this.badgeSettings.isForceWhiteBackground()) {
             fixTransparency(canvas);
         }
 
         try (ByteArrayOutputStream ms = new ByteArrayOutputStream()) {
-            if (gifEncoder) {
+            if (this.badgeSettings.getRenderType() == RenderType.GIF) {
                 ImageIO.write(canvas, "gif", ms);
             } else {
                 ImageIO.write(canvas, "png", ms);
@@ -313,11 +308,5 @@ public class Badge {
                 }
             }
         }
-    }
-
-    /* Simple point class for positioning */
-    public static class Point {
-        int x, y;
-        Point(int x, int y) { this.x = x; this.y = y; }
     }
 }
