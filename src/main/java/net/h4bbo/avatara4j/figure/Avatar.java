@@ -1,5 +1,6 @@
 package net.h4bbo.avatara4j.figure;
 
+import net.h4bbo.avatara4j.badges.Extensions.ColorExtensions;
 import net.h4bbo.avatara4j.figure.converter.FigureConverter;
 import net.h4bbo.avatara4j.figure.readers.FiguredataReader;
 import net.h4bbo.avatara4j.figure.readers.ManifestReader;
@@ -70,9 +71,9 @@ public class Avatar {
             CANVAS_WIDTH = temp;
         }
 
-        bodyCanvas = createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
-        faceCanvas = createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
-        drinkCanvas = createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
+        bodyCanvas = ColorExtensions.createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
+        faceCanvas = ColorExtensions.createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
+        drinkCanvas = ColorExtensions.createTransparentImage(CANVAS_WIDTH, CANVAS_HEIGHT);
 
         this.frame = frame - 1;
         this.carryDrink = carryDrink;
@@ -90,16 +91,6 @@ public class Avatar {
 
             this.carryDrink = 0;
         }
-    }
-
-    // Create a transparent BufferedImage
-    private static BufferedImage createTransparentImage(int width, int height) {
-        BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = b.createGraphics();
-        g2d.setComposite(AlphaComposite.Clear);
-        g2d.fillRect(0, 0, width, height);
-        g2d.dispose();
-        return b;
     }
 
     public byte[] run() {
@@ -224,13 +215,13 @@ public class Avatar {
                             Optional<FigureColor> colourData = palette.stream().filter(x -> x.getColourId().equals(paletteId)).findFirst();
 
                             colourData.ifPresent(figureColor -> {
-                                tintImage(image, figureColor.getHexColor(), 255);
+                                ColorExtensions.tintImage(image, figureColor.getHexColor(), 255);
                             });
                         }
                     }
                 }
             } else {
-                tintImage(image, "FFFFFF", 255);
+                ColorExtensions.tintImage(image, "FFFFFF", 255);
             }
 
             // Draw to the correct canvas
@@ -287,37 +278,6 @@ public class Avatar {
         int x = pt.x + 1;
         int y = pt.y + 2;
         return new Point(x, y);
-    }
-
-    // Tint image by hex color
-    private void tintImage(BufferedImage image, String hexColourCode, int alpha) {
-        Color rgb = hexToColor(hexColourCode);
-        int w = image.getWidth();
-        int h = image.getHeight();
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < h; y++) {
-                int argb = image.getRGB(x, y);
-                int a = (argb >> 24) & 0xff;
-                if (a > 0) {
-                    int r = ((argb >> 16) & 0xff) * rgb.getRed() / 255;
-                    int g = ((argb >> 8) & 0xff) * rgb.getGreen() / 255;
-                    int b = (argb & 0xff) * rgb.getBlue() / 255;
-                    int rgba = (alpha << 24) | (r << 16) | (g << 8) | b;
-                    image.setRGB(x, y, rgba);
-                }
-            }
-        }
-    }
-
-    // Convert hex to Color
-    public static Color hexToColor(String hex) {
-        if (hex.equalsIgnoreCase("transparent"))
-            return new Color(0, 0, 0, 0);
-        hex = hex.replace("#", "");
-        int r = Integer.parseInt(hex.substring(0, 2), 16);
-        int g = Integer.parseInt(hex.substring(2, 4), 16);
-        int b = Integer.parseInt(hex.substring(4, 6), 16);
-        return new Color(r, g, b);
     }
 
     // Check if a figure part is head
