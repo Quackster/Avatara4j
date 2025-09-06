@@ -266,7 +266,7 @@ public class Badge {
         String baseDir = Paths.get("badges", "shockwave",
                 type == BadgePartType.BASE ? "base" : "templates").toString();
 
-        String fileName = (templateId == 0 ? "base" : fileGraphic) + ".gif";
+        String fileName = (templateId == 0 ? "base" : fileGraphic) + ".png";
         String filePath = Paths.get(baseDir, fileName).toString();
 
         if (badgeSettings.getBasePath() != null && !badgeSettings.getBasePath().isEmpty()) {
