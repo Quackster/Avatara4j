@@ -140,7 +140,7 @@ public class FileUtil {
             }
         }
 
-        return result.stream().findFirst().get();
+        return result.stream().findFirst().orElse(null);
     }
 
     public List<InputStream> solveFile(String directory, String fileNameContains) {

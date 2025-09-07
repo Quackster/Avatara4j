@@ -427,10 +427,9 @@ public class Avatar {
         String offsets = ManifestReader.getInstance().getParts().get(assetName);
         if (offsets == null) return null;
 
-        List<InputStream> streams = FileUtil.getInstance().solveFile("figuredata/images/", assetName);
-        Optional<InputStream> file = streams.stream().findFirst();
+        InputStream file = FileUtil.getInstance().getFile("figuredata/images/", assetName + ".png");
 
-        if (!file.isPresent())
+        if (file == null)
             return null;
 
         // if (file.get().isEmpty()) return null;
@@ -440,7 +439,7 @@ public class Avatar {
         int offsetY = Integer.parseInt(offsetParts[1]);
 
         return new AvatarAsset(
-                this.isSmall, this.action, assetName, file.orElse(null),
+                this.isSmall, this.action, assetName, file,
                 offsetX, offsetY, part, set, CANVAS_HEIGHT, CANVAS_WIDTH, parts
         );
     }
