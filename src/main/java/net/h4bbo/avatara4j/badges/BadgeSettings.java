@@ -1,11 +1,6 @@
 package net.h4bbo.avatara4j.badges;
 
-import net.h4bbo.avatara4j.badges.Extensions.RenderType;
-
-import java.security.*;
 import java.util.Objects;
-import java.util.regex.*;
-import javax.xml.*;
 
 public class BadgeSettings {
     private String basePath;

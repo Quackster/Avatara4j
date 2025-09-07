@@ -1,8 +1,8 @@
 package net.h4bbo.avatara4j.badges;
 
-import net.h4bbo.avatara4j.badges.Extensions.ColorExtensions;
-import net.h4bbo.avatara4j.badges.Extensions.RenderType;
-import net.h4bbo.avatara4j.badges.Extensions.StringExtensions;
+import net.h4bbo.avatara4j.extensions.ColorExtensions;
+import net.h4bbo.avatara4j.extensions.StringExtensions;
+import net.h4bbo.avatara4j.util.FileUtil;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -169,7 +169,6 @@ public class Badge {
                         }
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
                     // ignore for now
                 }
             } else {
@@ -238,16 +237,18 @@ public class Badge {
     public BufferedImage getTemplate(String symbol) {
         String filePath = Paths.get("badges", "badgeparts", symbol).toString();
 
+        /*
         if (badgeSettings.getBasePath() != null && !badgeSettings.getBasePath().isEmpty()) {
             filePath = Paths.get(badgeSettings.getBasePath(), "badges", "badgeparts", symbol).toString();
-        }
+        }*/
 
+        /*
         if (!Files.exists(Paths.get(filePath))) {
             return null;
-        }
+        }*/
 
         try {
-            return ImageIO.read(new File(filePath));
+            return ImageIO.read(FileUtil.getInstance().getFile("badges/badgeparts/", symbol));
         } catch (IOException e) {
             return null;
         }
@@ -269,19 +270,22 @@ public class Badge {
         String fileName = (templateId == 0 ? "base" : fileGraphic) + ".png";
         String filePath = Paths.get(baseDir, fileName).toString();
 
+        /*
         if (badgeSettings.getBasePath() != null && !badgeSettings.getBasePath().isEmpty()) {
             filePath = Paths.get(badgeSettings.getBasePath(), "badges", "shockwave",
                     type == BadgePartType.BASE ? "base" : "templates",
                     fileName).toString();
-        }
+        }*/
 
+        /*
         if (!Files.exists(Paths.get(filePath))) {
             // Return null instead of throwing an exception
             return null;
-        }
+        }*/
 
         try {
-            return ImageIO.read(new File(filePath));
+            // return ImageIO.read(new File(filePath));
+            return ImageIO.read(FileUtil.getInstance().getFile(baseDir, fileName));
         } catch (IOException e) {
             return null;
         }

@@ -1,6 +1,6 @@
 package net.h4bbo.avatara4j.figure.readers;
 
-import net.h4bbo.avatara4j.figure.util.FileUtil;
+import net.h4bbo.avatara4j.util.FileUtil;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -52,6 +52,7 @@ public class ManifestReader {
         //}
 
         List<InputStream> xmlFiles = FileUtil.getInstance().getFigureXmlFiles();
+
         if (xmlFiles != null) {
             for (InputStream manifest : xmlFiles) {
                 try {

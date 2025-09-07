@@ -2,7 +2,7 @@ package net.h4bbo.avatara4j.figure.readers;
 
 import net.h4bbo.avatara4j.figure.types.legacy.LegacyFigure;
 import net.h4bbo.avatara4j.figure.types.legacy.LegacyPart;
-import net.h4bbo.avatara4j.figure.util.FileUtil;
+import net.h4bbo.avatara4j.util.FileUtil;
 import org.w3c.dom.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,7 +50,7 @@ public class LegacyFiguredataReader {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(FileUtil.getInstance().getFile("figuredata", "figuredata_oldschool"));
+            Document document = builder.parse(FileUtil.getInstance().getFile("figuredata", "figuredata_oldschool.xml"));
             document.getDocumentElement().normalize();
 
             NodeList genderNodes = document.getElementsByTagName("genders");

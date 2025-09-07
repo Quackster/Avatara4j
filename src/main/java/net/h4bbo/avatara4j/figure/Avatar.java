@@ -1,6 +1,6 @@
 package net.h4bbo.avatara4j.figure;
 
-import net.h4bbo.avatara4j.badges.Extensions.ColorExtensions;
+import net.h4bbo.avatara4j.extensions.ColorExtensions;
 import net.h4bbo.avatara4j.figure.converter.FigureConverter;
 import net.h4bbo.avatara4j.figure.readers.FiguredataReader;
 import net.h4bbo.avatara4j.figure.readers.ManifestReader;
@@ -8,7 +8,7 @@ import net.h4bbo.avatara4j.figure.types.FigureColor;
 import net.h4bbo.avatara4j.figure.types.FigurePart;
 import net.h4bbo.avatara4j.figure.types.FigureSet;
 import net.h4bbo.avatara4j.figure.types.FigureSetType;
-import net.h4bbo.avatara4j.figure.util.FileUtil;
+import net.h4bbo.avatara4j.util.FileUtil;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

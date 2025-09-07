@@ -4,9 +4,7 @@ import net.h4bbo.avatara4j.figure.readers.FiguredataReader;
 import net.h4bbo.avatara4j.figure.readers.LegacyFiguredataReader;
 import net.h4bbo.avatara4j.figure.types.FigureColor;
 import net.h4bbo.avatara4j.figure.types.legacy.LegacyFigure;
-import net.h4bbo.avatara4j.figure.util.FileUtil;
 
-import java.io.*;
 import java.util.*;
 
 /**

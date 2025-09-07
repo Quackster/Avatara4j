@@ -4,7 +4,7 @@ import net.h4bbo.avatara4j.figure.types.FigureColor;
 import net.h4bbo.avatara4j.figure.types.FigurePart;
 import net.h4bbo.avatara4j.figure.types.FigureSet;
 import net.h4bbo.avatara4j.figure.types.FigureSetType;
-import net.h4bbo.avatara4j.figure.util.FileUtil;
+import net.h4bbo.avatara4j.util.FileUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -36,12 +36,12 @@ public class FiguredataReader {
             loadFigureSetTypes();
             loadFigurePalettes();
         } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            ex.printStackTrace();
         }
     }
 
     public void loadFigureSets() throws Exception {
-        InputStream xmlFile = Objects.requireNonNull( FileUtil.getInstance().getFile("figuredata", "figuredata"), "figuredata/figuredata.xml file was not found");
+        InputStream xmlFile = Objects.requireNonNull(FileUtil.getInstance().getFile("figuredata", "figuredata.xml"), "figuredata/figuredata.xml file was not found");
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -104,9 +104,13 @@ public class FiguredataReader {
         }
     }
 
-    public void loadFigurePalettes() {
-        Document xmlFile =  FileUtil.getInstance().solveXmlFile("figuredata");
-        NodeList list = xmlFile.getElementsByTagName("palette");
+    public void loadFigurePalettes() throws Exception {
+        InputStream xmlFile =  FileUtil.getInstance().getFile("figuredata", "figuredata.xml");
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.parse(xmlFile);
+        NodeList list = document.getElementsByTagName("palette");
 
         for (int i = 0; i < list.getLength(); i++) {
             Node palette = list.item(i);
@@ -136,9 +140,14 @@ public class FiguredataReader {
         }
     }
 
-    public void loadFigureSetTypes() {
-        Document xmlFile =  FileUtil.getInstance().solveXmlFile("figuredata");
-        NodeList list = xmlFile.getElementsByTagName("settype");
+    public void loadFigureSetTypes() throws Exception {
+        InputStream xmlFile =  FileUtil.getInstance().getFile("figuredata", "figuredata.xml");
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.parse(xmlFile);
+
+        NodeList list = document.getElementsByTagName("settype");
 
         for (int i = 0; i < list.getLength(); i++) {
             Node setType = list.item(i);
