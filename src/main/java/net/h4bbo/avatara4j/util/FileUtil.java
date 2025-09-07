@@ -88,11 +88,11 @@ public class FileUtil {
             }
         } else {
             // CLASSPATH (inside jar or classpath dir)
-            directory = directory.replace(File.pathSeparator, "/");
-            String dir = directory.endsWith("/") ? directory : directory + "/";
+            //directory = directory.replace(File.pathSeparator, "/");
+            String dir = normalizePath(directory.endsWith("/") ? directory : directory + "/");
 
             try {
-                Enumeration<URL> resources = classLoader.getResources(directory);
+                Enumeration<URL> resources = classLoader.getResources(dir);
                 while (resources.hasMoreElements()) {
                     URL url = resources.nextElement();
                     if ("jar".equals(url.getProtocol())) {
@@ -102,7 +102,8 @@ public class FileUtil {
                             Enumeration<JarEntry> entries = jar.entries();
                             while (entries.hasMoreElements()) {
                                 JarEntry entry = entries.nextElement();
-                                if (entry.getName().startsWith(dir) && !entry.isDirectory()) {
+
+                                if (normalizePath(entry.getName()).startsWith(dir) && !entry.isDirectory()) {
                                     String fileName =  new File(entry.getName()).getName();
 
                                     if (fileName.equals(file)) {
@@ -161,8 +162,9 @@ public class FileUtil {
             }
         } else {
             // CLASSPATH (inside jar or classpath dir)
-            directory = directory.replace(File.pathSeparator, "/");
-            String dir = directory.endsWith("/") ? directory : directory + "/";
+            // directory = directory.replace(File.pathSeparator, "/");
+            String dir = normalizePath(directory.endsWith("/") ? directory : directory + "/");
+
             try {
                 Enumeration<URL> resources = classLoader.getResources(dir);
                 while (resources.hasMoreElements()) {
@@ -173,7 +175,7 @@ public class FileUtil {
                             Enumeration<JarEntry> entries = jar.entries();
                             while (entries.hasMoreElements()) {
                                 JarEntry entry = entries.nextElement();
-                                if (entry.getName().startsWith(dir) && !entry.isDirectory()) {
+                                if (normalizePath(entry.getName()).startsWith(dir) && !entry.isDirectory()) {
                                     String fileName = getFileNameWithoutExtension(new File(entry.getName()).getName());
                                     if (fileName.contains(fileNameContains)) {
                                         InputStream is = classLoader.getResourceAsStream(entry.getName());
@@ -209,6 +211,11 @@ public class FileUtil {
         return solveFile("figuredata/xml", "");
     }
 
+
+    public static String normalizePath(String path) {
+        // Replace backslashes with forward slashes
+        return path.replace('\\', '/');
+    }
 
     /*
     public List<File> getFigureXmlFiles() {
