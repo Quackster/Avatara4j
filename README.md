@@ -34,7 +34,7 @@ Then add the dependency:
 
 ```groovy
 dependencies {
-    implementation 'com.github.Quackster:Avatara4j:v1.0.1'
+    implementation 'com.github.Quackster:Avatara4j:v1.0.2'
 }
 ```
 
@@ -58,7 +58,7 @@ Then add the dependency:
     <dependency>
         <groupId>com.github.Quackster</groupId>
         <artifactId>Avatara4j</artifactId>
-        <version>v1.0.1</version>
+        <version>v1.0.2</version>
     </dependency>
 </dependencies>
 ```
