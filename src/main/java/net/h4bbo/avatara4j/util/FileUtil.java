@@ -80,6 +80,7 @@ public class FileUtil {
                     String fileName = (entry.getFileName().toString());
                     if (fileName.equals((file))) {
                         result.add(Files.newInputStream(entry));
+                        break;
                     }
                 }
             } catch (Exception ex) {
@@ -87,7 +88,7 @@ public class FileUtil {
             }
         } else {
             // CLASSPATH (inside jar or classpath dir)
-            directory = directory.replace("\\", "/");
+            directory = directory.replace(File.pathSeparator, "/");
             String dir = directory.endsWith("/") ? directory : directory + "/";
 
             try {
@@ -108,6 +109,7 @@ public class FileUtil {
                                         InputStream is = classLoader.getResourceAsStream(entry.getName());
                                         if (is != null) {
                                             result.add(is);
+                                            break;
                                         }
                                     }
                                 }
@@ -122,6 +124,7 @@ public class FileUtil {
                                 String fileName = (child.getName());
                                 if (fileName.equals(file)) {
                                     result.add(Files.newInputStream(child.toPath()));
+                                    break;
                                 }
                             }
                         }
@@ -158,6 +161,7 @@ public class FileUtil {
             }
         } else {
             // CLASSPATH (inside jar or classpath dir)
+            directory = directory.replace(File.pathSeparator, "/");
             String dir = directory.endsWith("/") ? directory : directory + "/";
             try {
                 Enumeration<URL> resources = classLoader.getResources(dir);
