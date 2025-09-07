@@ -45,7 +45,7 @@ public class Avatar {
 
         if (figure.matches("\\d+")) {
             figure = FigureConverter.getInstance().convertOldToNew(figure);
-            System.out.println("Converting old figure to new: " + figure);
+            // System.out.println("Converting old figure to new: " + figure);
         }
 
         this.figure = figure;

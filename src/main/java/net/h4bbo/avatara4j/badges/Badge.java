@@ -287,6 +287,7 @@ public class Badge {
             // return ImageIO.read(new File(filePath));
             return ImageIO.read(FileUtil.getInstance().getFile(baseDir, fileName));
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }

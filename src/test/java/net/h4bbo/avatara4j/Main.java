@@ -14,11 +14,12 @@ import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) {
+        LegacyFiguredataReader.getInstance().load();
         // Only need to be called once
-        loadData();
+        //loadData();
 
-        writeDefaultFigure();
-        writeOldschoolFigure();
+        //writeDefaultFigure();
+        //writeOldschoolFigure();
 
         writeBadge();
     }

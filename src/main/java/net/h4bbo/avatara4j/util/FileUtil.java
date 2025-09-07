@@ -21,11 +21,9 @@ public class FileUtil {
     public enum FileSource { FILESYSTEM, CLASSPATH }
 
     private final FileSource fileSource;
-    private final ClassLoader classLoader;
 
     public FileUtil(FileSource fileSource) {
         this.fileSource = fileSource;
-        this.classLoader = Thread.currentThread().getContextClassLoader();
     }
 
     // ----- PUBLIC API -----
@@ -73,6 +71,7 @@ public class FileUtil {
 
     public InputStream getFile(String directory, String file) {
         List<InputStream> result = new ArrayList<>();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         if (fileSource == FileSource.FILESYSTEM) {
             Path dirPath = Paths.get(directory);
@@ -84,25 +83,28 @@ public class FileUtil {
                     }
                 }
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                ex.printStackTrace();
             }
         } else {
             // CLASSPATH (inside jar or classpath dir)
+            directory = directory.replace("\\", "/");
             String dir = directory.endsWith("/") ? directory : directory + "/";
+
             try {
-                Enumeration<URL> resources = classLoader.getResources(dir);
+                Enumeration<URL> resources = classLoader.getResources(directory);
                 while (resources.hasMoreElements()) {
                     URL url = resources.nextElement();
                     if ("jar".equals(url.getProtocol())) {
                         String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
+
                         try (JarFile jar = new JarFile(jarPath)) {
                             Enumeration<JarEntry> entries = jar.entries();
                             while (entries.hasMoreElements()) {
                                 JarEntry entry = entries.nextElement();
                                 if (entry.getName().startsWith(dir) && !entry.isDirectory()) {
-                                    String entryName = new File(entry.getName()).getName();
-                                    String fileName = (entryName);
-                                    if (fileName.equals((file))) {
+                                    String fileName =  new File(entry.getName()).getName();
+
+                                    if (fileName.equals(file)) {
                                         InputStream is = classLoader.getResourceAsStream(entry.getName());
                                         if (is != null) {
                                             result.add(is);
@@ -111,21 +113,27 @@ public class FileUtil {
                                 }
                             }
                         }
-                    } else if ("file".equals(url.getProtocol())) {
+                    } else
+                    if ("file".equals(url.getProtocol())) {
                         File f = new File(url.toURI());
                         File[] files = f.listFiles();
                         if (files != null) {
                             for (File child : files) {
                                 String fileName = (child.getName());
-                                if (fileName.equals((file))) {
+                                if (fileName.equals(file)) {
                                     result.add(Files.newInputStream(child.toPath()));
                                 }
                             }
                         }
                     }
                 }
+
+                if (result.isEmpty()) {
+
+                }
+
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                ex.printStackTrace();
             }
         }
 
@@ -134,6 +142,7 @@ public class FileUtil {
 
     public List<InputStream> solveFile(String directory, String fileNameContains) {
         List<InputStream> result = new ArrayList<>();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         if (fileSource == FileSource.FILESYSTEM) {
             Path dirPath = Paths.get(directory);
@@ -161,8 +170,7 @@ public class FileUtil {
                             while (entries.hasMoreElements()) {
                                 JarEntry entry = entries.nextElement();
                                 if (entry.getName().startsWith(dir) && !entry.isDirectory()) {
-                                    String entryName = new File(entry.getName()).getName();
-                                    String fileName = getFileNameWithoutExtension(entryName);
+                                    String fileName = getFileNameWithoutExtension(new File(entry.getName()).getName());
                                     if (fileName.contains(fileNameContains)) {
                                         InputStream is = classLoader.getResourceAsStream(entry.getName());
                                         if (is != null) {
