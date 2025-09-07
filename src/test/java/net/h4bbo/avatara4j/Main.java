@@ -14,19 +14,23 @@ import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) {
+        // Only need to be called once
+        loadData();
+
+        writeDefaultFigure();
+        writeOldschoolFigure();
+
+        writeBadge();
+    }
+
+    private static void loadData() {
         System.out.println("Loading figuredata for Avatara4j");
         FiguredataReader.getInstance().load();
         LegacyFiguredataReader.getInstance().load();
 
         System.out.println("Loading figure offsets");
         ManifestReader.getInstance().load();
-
         System.out.println("Loaded " + ManifestReader.getInstance().getParts().size() + " figure offsets!");
-
-        writeDefaultFigure();
-        writeOldschoolFigure();
-
-        writeBadge();
     }
 
     private static void writeBadge() {
