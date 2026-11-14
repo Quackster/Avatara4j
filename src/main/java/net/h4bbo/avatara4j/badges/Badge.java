@@ -32,6 +32,12 @@ public class Badge {
     public static final int CANVAS_HEIGHT = 39;
     public static final int CANVAS_WIDTH = 39;
 
+    /**
+     * Number of colours in {@link #colors}. Colour ids inside a badge code are
+     * one based indexes into that palette.
+     */
+    public static final int MAX_COLOR_RESOURCE = 18;
+
     public String[] colors = new String[]{
         "ffd601",
         "ec7600",
@@ -86,6 +92,18 @@ public class Badge {
         // BadgeResourceManager.Load(); // placeholder – implementation omitted
         this.badgeSettings = settings;
         this.badgeParts = new ArrayList<>();
+    }
+
+    /**
+     * Checks whether a badge code is usable by this library, accepting both the
+     * modern and the legacy code layout. See {@link BadgeCodeVerifier#verify(String)}
+     * for the exact rules.
+     *
+     * @param badgeCode the badge code to check
+     * @return true when the code can be turned into a badge
+     */
+    public static boolean verifyBadgeCode(String badgeCode) {
+        return BadgeCodeVerifier.verify(badgeCode);
     }
 
     /**

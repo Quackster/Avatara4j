@@ -12,6 +12,7 @@
 |---------|-------------|
 | **Figure rendering** | Create avatars in various sizes (`b`, `l`, `s`) with custom body/head directions, actions, gestures, and frames. |
 | **Badge rendering** | Render custom badges using the same template system, support shockwave, background options, and output formats. |
+| **Badge code verification** | One call (`Badge.verifyBadgeCode`) validates a code before you render or store it, accepting both the modern and the legacy badge code layout. |
 | **Legacy data support** | Load both current and legacy figuredata files (XML) and manifest offsets. |
 | **Extensible** | Badge settings, render type, and other parameters are fully configurable. |
 | **Zero external dependencies** | Only standard JDK 1.8+. |
@@ -93,9 +94,37 @@ Then add the dependency:
 
         Badge badge = Badge.parseBadgeData(settings, "b1605Xs44024s17171");
         Files.write(Paths.get("badge.png"), badge.render());
+
+        // Verify a code first — accepts both the modern and the legacy layout
+        if (Badge.verifyBadgeCode("b016051Xs044024")) {
+            Badge verified = Badge.parseBadgeData(settings, "b016051Xs044024");
+        }
 ```
 
 ***Tip: Keep the `load()` calls to a single place in your application (e.g., a static block or a Spring `@PostConstruct`). They populate caches and ensure fast rendering thereafter.***
+
+### Verifying badge codes
+
+```java
+boolean ok = Badge.verifyBadgeCode("b1605Xs44024s17171");
+```
+
+`Badge.verifyBadgeCode` (backed by `BadgeCodeVerifier`) validates a code without knowing which badge
+editor produced it — both layouts are accepted, and one code may even mix them:
+
+| Layout | Part format | Example |
+|--------|-------------|---------|
+| Modern | `b`/`s` + 3 digit graphic id + 2 digit colour + 1 digit location | `b016051`, `s044024` |
+| Legacy | `b`/`s` + 2 digit graphic id + 2 digit colour + optional location | `b1605`, `s44024` |
+
+A code needs at least one part and no more than `BadgeCodeVerifier.MAX_PARTS` (12, the badge editor
+limit). Parts may follow each other directly or be separated with `X`. Colour ids must be within
+`1..Badge.MAX_COLOR_RESOURCE` (the palette is one based) and location ids `0..8`. Graphic ids are not
+range checked: the id → template table (`BadgeResourceManager`) is not populated by this port, so an
+unknown graphic id renders as nothing rather than failing verification.
+
+The check is stricter than `Badge.parseBadgeData`, which picks parts out of anywhere in the input
+string, so it is suitable for validating user supplied codes before storing them.
 
 ## API Overview
 
@@ -107,6 +136,7 @@ Then add the dependency:
 | `Avatar` | Main renderer for figures. Configure size, direction, action, etc. |
 | `Badge` | Generates badges from badge data strings. |
 | `BadgeSettings` | Configure badge rendering options (shockwave, background, format). |
+| `BadgeCodeVerifier` | Validates badge codes of both the modern and the legacy layout, behind `Badge.verifyBadgeCode`. |
 | `RenderType` | Enum (`PNG`, `GIF`) – output format. |
 
 All core classes are in the `net.h4bbo.avatara4j` package and its sub‑packages.
